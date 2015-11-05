@@ -1,0 +1,6 @@
+[submodule "photochop"]
+	path = photochop
+	url = https://github.com/quadnix/photochop
+[submodule "cnn"]
+	path = cnn
+	url = https://github.com/philipxjm/Choate-Neural-Network
