@@ -13,7 +13,8 @@ if __name__=="__main__":
     parser.add_argument('--pre-smooth', action='store_true', required=False, help="pre-smooth the input document");
     parser.add_argument('--minimum-group-size', type=int, required=False, help="set the minimum group size to be accepted");
     parser.add_argument('--set-threshold-to', type=int, required=False, help="set the threshold for a match (0-255)");
-    parser.add_argument('--weights', type=str, required=True, help="weight information set to use");
+    parser.add_argument('--enable-multiprocessing', action='store_true', default=False, help="Multi-processing, default false");
+    parser.add_argument('--read-weights', type=str, required=True, help="weight information set to use");
     opts = parser.parse_args();
 
     # initialize the argument parser
@@ -31,37 +32,35 @@ if __name__=="__main__":
     print('chopping the image...');
     dicer.process();
     dicer.process_words();
-    dicer.dump_words('words');
 
     # shoehorned api - *somebody* doesn't have nice docs, or wrappers, or anything else for that matter
     activedir = str(uuid.uuid4());
     dicer.write_out(activedir);
 
-    # see? a fucking FS pass instead of passing data directly.
-    # also system calls. just kill me now.
-    print('generating metadata for neural network...');
-    os.system('mv out/' + activedir + ' cnn/data/tmp/' + activedir)
-    os.system('touch encodedcsv/' + activedir + '.csv');
-    receptor.readFolderWithName('tmp/' + activedir, activedir + '.csv', False);
+    if opts.enable_multiprocessing:
+        print("Receptor : Starting Multiprocessing...");
+        start = time.time();
+        imgs = [];
+        try:
+            threadcount = cpu_count();
+        except NotImplementedError:
+            threadcount = 2;
+            print('Error getting core counts, setting threadcount to 2');
+        threads = Pool(threadcount);
 
-    # now look at this fuckery
-    print('initializing network');
-    n = network.Network(26,150,7);
+        for x in xrange(1,10):
+            imgs.append([arr]); # PATRICK THIS IS WHERE TO INPUT ARR
 
-    # ugh
-    print('loading in generated metadata');
-    testingData = network.importCSV('encodedcsv/' + activedir + '.csv');
+        print("Distributing tasks across " + str(threadcount) + " cores...");
+        final = threads.map(partial(mp), imgs);
 
-    # now we're constrained to having the dir named CNN
-    print('loading weights...')
-    n.importWeights('cnn/weights/' + opts.weights + '/wi.csv', 'cnn/weights/' + opts.weights + '/wo.csv');
+        end = time.time();
+        print("Time Elapsed: " + str(end - start) + " seconds");
 
-    # finally do the recognition
-    print('running network...');
-    n.recognize(testingData, activedir + '.txt');
-
-    # cuz users are stupid
-    print('\n\noutput in ' + activedir + '.txt');
-
-
-
+    def mp((arr)):
+        receptor = Receptor();
+        receptor.setInputArr(arr);
+        receptor.generateReceptors();
+        receptor.setCharacter("x");
+        values = receptor.getOutput();
+        return values;
