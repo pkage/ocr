@@ -24,10 +24,11 @@ if __name__=="__main__":
     parser.add_argument('--pre-smooth', action='store_true', required=False, help="pre-smooth the input document");
     parser.add_argument('--minimum-group-size', type=int, required=False, help="set the minimum group size to be accepted");
     parser.add_argument('--set-threshold-to', type=int, required=False, help="set the threshold for a match (0-255)", default=200);
-    parser.add_argument('--enable-multiprocessing', action='store_true', default=False, help="Multi-processing, default false");
     parser.add_argument('--read-weights', type=str, required=True, help="weight information set to use");
     parser.add_argument('--spellcheck', action='store_true', required=False, help='spellcheck everything');
     opts = parser.parse_args();
+
+    opts.enable_multiprocessing = True;
 
     if opts.spellcheck:
         chk = enchant.Dict('en_US');
@@ -86,13 +87,13 @@ if __name__=="__main__":
                 
             doc.append(linedata);
 
-        print('output:\n' + '\n'.join(doc));
+        print('output:\n' + '\n'.join(['\t' + line for line in doc]));
                     
 
                 
             
 
-        print("Distributing tasks across " + str(threadcount) + " cores...");
+    #    print("Distributing tasks across " + str(threadcount) + " cores...");
         final = threads.map(partial(mp), imgs);
 
         end = time.time();
