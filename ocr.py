@@ -12,12 +12,12 @@ if __name__=="__main__":
     parser.add_argument('--auto-align', action='store_true', required=False, help="auto align the input document");
     parser.add_argument('--pre-smooth', action='store_true', required=False, help="pre-smooth the input document");
     parser.add_argument('--minimum-group-size', type=int, required=False, help="set the minimum group size to be accepted");
+    parser.add_argument('--set-threshold-to', type=int, required=False, help="set the threshold for a match (0-255)");
     parser.add_argument('--weights', type=str, required=True, help="weight information set to use");
     opts = parser.parse_args();
 
     # initialize the argument parser
-    dicer = Photochopper(opts.filename, 200);
-
+    dicer = Photochopper(opts.filename, opts.set_threshold_to);
 
     # if we can set the minimum group size then do that thing
     if opts.minimum_group_size is not None:
@@ -27,27 +27,27 @@ if __name__=="__main__":
     dicer.enable_auto_align(opts.auto_align);
     dicer.enable_pre_smoothing(opts.pre_smooth);
 
-    # some nice sane code
+    # dicing
     print('chopping the image...');
     dicer.process();
-    print('preparing for neural network');
-    dicer.export_groups();
-    
+    dicer.process_words();
+    dicer.dump_words('words');
+
     # shoehorned api - *somebody* doesn't have nice docs, or wrappers, or anything else for that matter
     activedir = str(uuid.uuid4());
     dicer.write_out(activedir);
-    
+
     # see? a fucking FS pass instead of passing data directly.
     # also system calls. just kill me now.
     print('generating metadata for neural network...');
-    os.system('mv out/' + activedir + ' cnn/data/tmp/' + activedir) 
+    os.system('mv out/' + activedir + ' cnn/data/tmp/' + activedir)
     os.system('touch encodedcsv/' + activedir + '.csv');
     receptor.readFolderWithName('tmp/' + activedir, activedir + '.csv', False);
 
     # now look at this fuckery
     print('initializing network');
     n = network.Network(26,150,7);
-    
+
     # ugh
     print('loading in generated metadata');
     testingData = network.importCSV('encodedcsv/' + activedir + '.csv');
@@ -62,6 +62,6 @@ if __name__=="__main__":
 
     # cuz users are stupid
     print('\n\noutput in ' + activedir + '.txt');
-    
-    
+
+
 
